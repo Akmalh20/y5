@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Cup Chinese Penalty Challenge - 我爱露营</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;800&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- Three.js 3D Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sports: ['Teko', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        zh: ['Noto Sans SC', 'sans-serif'],
+                    },
+                    colors: {
+                        pitch: '#1b4d2e',
+                        gold: '#ffd700',
+                        stadium: '#0f172a'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html, body {
+            height: 100%;
+            height: 100dvh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0f19;
+            color: #ffffff;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        /* Custom smooth scrollbar for modals */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.5);
+            border-radius: 4px;
+        }
+
+        .font-sports {
+            font-family: 'Teko', sans-serif;
+            letter-spacing: 1.5px;
+        }
+
+        .font-zh {
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        /* 3D Canvas container */
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Custom Glassmorphism UI */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Pulse glowing effects */
+        .glow-gold {
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .glow-green {
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+        }
+
+        .glow-red {
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+        }
+
+        /* Sentence word block animations */
+        .word-card {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            touch-action: manipulation;
+        }
+
+        .word-card:active {
+            transform: scale(0.95);
+        }
+
+        /* Swipe trajectory indicator line */
+        #swipe-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: auto;
+            touch-action: none;
+        }
+
+        /* Animated Stadium background gradient */
+        .stadium-bg {
+            background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%);
+        }
+
+        /* Shimmer effect for buttons */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .btn-shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite;
+        }
+
+        /* Landscape Orientation Warning Display Rules */
+        @media (orientation: portrait) and (max-width: 1024px) {
+            #landscape-warning {
+                display: flex !important;
+            }
+        }
+        @media (orientation: landscape) or (min-width: 1025px) {
+            #landscape-warning {
+                display: none !important;
+            }
+        }
+
+        /* Ultra-compact scaling for mobile landscape mode (fit within screen without scrolling) */
+        @media (max-height: 600px) {
+            .glass-panel {
+                padding: 0.5rem 0.75rem !important;
+            }
+            .glass-card {
+                padding: 0.25rem 0.5rem !important;
+            }
+            .welcome-container {
+                display: grid !important;
+                grid-template-columns: 1.1fr 0.9fr !important;
+                gap: 0.5rem !important;
+                align-items: start !important;
+                max-width: 98vw !important;
+                max-height: 94dvh !important;
+                overflow-y: auto !important;
+                text-align: left !important;
+            }
+            .sentence-modal-box {
+                display: grid !important;
+                grid-template-columns: 0.9fr 1.1fr !important;
+                gap: 0.5rem !important;
+                max-width: 98vw !important;
+                max-height: 94dvh !important;
+                overflow-y: auto !important;
+            }
+            .leaderboard-grid-container {
+                display: grid !important;
+                grid-template-columns: 1fr 1.2fr !important;
+                gap: 0.5rem !important;
+                align-items: stretch !important;
+                max-width: 98vw !important;
+                max-height: 94dvh !important;
+                overflow-y: auto !important;
+            }
+            .compact-text-xs {
+                font-size: 0.65rem !important;
+                line-height: 0.85rem !important;
+            }
+            .compact-py {
+                padding-top: 0.15rem !important;
+                padding-bottom: 0.15rem !important;
+            }
+        }
+    </style>
+</head>
+<body class="stadium-bg h-screen h-[100dvh] w-screen text-white overflow-hidden relative font-sans">
+
+    <!-- Landscape Mode Required Overlay -->
+    <div id="landscape-warning" class="hidden fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center select-none pointer-events-auto">
+        <div class="relative mb-4">
+            <div class="w-20 h-20 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-4xl shadow-2xl animate-pulse">
+                <i class="fas fa-mobile-alt transform rotate-90"></i>
+            </div>
+            <div class="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-xs font-bold">
+                <i class="fas fa-sync-alt fa-spin"></i>
+            </div>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-sports font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 mb-2">
+            SILA PUTARKAN TELEFON ANDA
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-300 max-w-xs leading-relaxed font-zh mb-4">
+            Sila pusingkan telefon anda ke mod <span class="text-amber-400 font-bold">Melintang (Landscape)</span> untuk paparan penuh tanpa terpotong!
+        </p>
+        <div class="px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-[11px] font-semibold flex items-center gap-2">
+            <i class="fas fa-arrows-alt-h text-amber-400"></i> Main Dalam Mod Landscape
+        </div>
+    </div>
+
+    <!-- Top Right Quick Controls -->
+    <div class="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 flex items-center gap-2">
+        <button id="btn-audio" onclick="toggleAudio()" class="w-10 h-10 sm:w-11 sm:h-11 rounded-full glass-card flex items-center justify-center text-amber-400 hover:text-white hover:bg-slate-700/80 transition-all shadow-lg border border-slate-600">
+            <i class="fas fa-volume-up text-sm sm:text-base"></i>
+        </button>
+        <button id="btn-admin-modal" onclick="openAdminModal()" class="w-10 h-10 sm:w-11 sm:h-11 rounded-full glass-card flex items-center justify-center text-sky-400 hover:text-white hover:bg-slate-700/80 transition-all shadow-lg border border-slate-600">
+            <i class="fas fa-cog text-sm sm:text-base"></i>
+        </button>
+    </div>
+
+    <!-- Admin Password Verification Modal -->
+    <div id="modal-admin-auth" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+        <div class="glass-panel rounded-3xl max-w-sm w-full p-6 sm:p-7 text-center border border-amber-500/40 shadow-2xl">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 mx-auto rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl sm:text-2xl mb-3 border border-amber-500/40">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-sports font-bold text-white tracking-wider mb-1">ADMIN ACCESS</h3>
+            <p class="text-xs sm:text-sm text-slate-400 mb-4">Sila masukkan kata laluan admin untuk meneruskan.</p>
+            <input type="password" id="input-admin-pass" placeholder="Kata laluan admin..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white text-center mb-3 focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') verifyAdminPassword()">
+            <p id="admin-pass-error" class="text-xs text-rose-400 hidden mb-3"><i class="fas fa-exclamation-circle"></i> Kata laluan salah!</p>
+            <div class="flex gap-2">
+                <button onclick="closeAdminAuthModal()" class="w-1/2 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">Batal</button>
+                <button onclick="verifyAdminPassword()" class="w-1/2 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 text-slate-950 hover:bg-amber-400">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome / Registration Screen -->
+    <div id="screen-welcome" class="relative z-30 h-full w-full flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+        <div class="welcome-container max-w-4xl w-full glass-panel rounded-2xl sm:rounded-3xl p-3 sm:p-6 text-center border border-amber-500/30 relative my-auto max-h-[96dvh] overflow-y-auto">
+            
+            <!-- Left Column on Landscape: Player Header & Team Selection -->
+            <div class="space-y-1.5 sm:space-y-3">
+                <!-- FIFA World Cup Badge Style Header -->
+                <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[9px] sm:text-xs font-semibold uppercase tracking-widest">
+                    <i class="fas fa-trophy text-amber-400"></i> World Cup Penalty Shootout
+                </div>
+                
+                <h1 class="text-lg sm:text-3xl font-sports font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 leading-none">
+                    YEAR 5 CHINESE <span class="text-white">我的爱好</span>
+                </h1>
+                <p class="text-slate-300 text-[10px] sm:text-xs font-zh">
+                    Unit: <span class="text-amber-400 font-bold">我爱露营 (I Love Camping)</span>
+                </p>
+
+                <!-- Player Name Input -->
+                <div class="text-left">
+                    <label class="block text-[9px] sm:text-xs font-semibold text-slate-300 uppercase tracking-wider mb-0.5">Player / Student Name</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-2.5 top-2 sm:top-2.5 text-slate-400 text-xs"></i>
+                        <input type="text" id="input-player-name" placeholder="Enter your full name..." class="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-1 sm:py-2 pl-7 sm:pl-9 pr-2 text-xs sm:text-sm placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-colors">
+                    </div>
+                </div>
+
+                <!-- National Team Selector -->
+                <div class="text-left">
+                    <label class="block text-[9px] sm:text-xs font-semibold text-slate-300 uppercase tracking-wider mb-0.5">Select Your National Team</label>
+                    <div class="grid grid-cols-4 gap-1 sm:gap-2" id="team-selector">
+                        <!-- Country Team Options dynamically initialized -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column on Landscape: Game Rules Summary & Kickoff Button -->
+            <div class="flex flex-col justify-between h-full space-y-2 sm:space-y-3 mt-2 sm:mt-0">
+                <!-- Rules Summary Box -->
+                <div class="glass-card rounded-xl sm:rounded-2xl p-2 sm:p-3 text-[10px] sm:text-xs text-slate-300 text-left space-y-1 border border-slate-700/60 leading-tight">
+                    <div class="font-bold text-amber-400 flex items-center gap-1 text-xs mb-0.5">
+                        <i class="fas fa-gamepad text-amber-400"></i> Game Rules:
+                    </div>
+                    <p>⚽ <b>Penalty Kick:</b> Swipe / drag forward to kick into goal!</p>
+                    <p>✍️ <b>Chinese Challenge:</b> Arrange words into correct sentence structure.</p>
+                    <p>🔥 <b>Multiplier:</b> Goal + Correct Sentence = <b>2x MULTIPLIER (20 PTS!)</b></p>
+                </div>
+
+                <!-- Start Game Button -->
+                <button onclick="startGame()" class="w-full py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl font-sports text-lg sm:text-2xl tracking-widest bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-slate-950 font-bold hover:brightness-110 active:scale-98 transition-all shadow-lg glow-gold flex items-center justify-center gap-2 border border-amber-300">
+                    <i class="fas fa-futbol"></i> KICK OFF TOURNAMENT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Canvas Container -->
+    <div id="screen-game" class="hidden relative w-full h-full h-[100dvh] overflow-hidden touch-none">
+        
+        <!-- 3D Three.js Render Target -->
+        <div id="canvas-container"></div>
+
+        <!-- Swipe Canvas overlay for kicking -->
+        <canvas id="swipe-canvas"></canvas>
+
+        <!-- Top HUD Navigation Bar -->
+        <div class="absolute top-0 left-0 w-full z-30 p-3 sm:p-4 pointer-events-none">
+            <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+                <!-- Country & Player Info -->
+                <div class="glass-panel px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto border border-slate-700">
+                    <span id="hud-flag" class="text-2xl sm:text-3xl">🇲🇾</span>
+                    <div>
+                        <div id="hud-player-name" class="font-bold text-xs sm:text-sm text-white leading-tight truncate max-w-[120px] sm:max-w-[200px]">Player Name</div>
+                        <div id="hud-team-name" class="text-[10px] sm:text-xs text-amber-400 uppercase tracking-wider font-semibold">Malaysia</div>
+                    </div>
+                </div>
+
+                <!-- Match Score & Round HUD -->
+                <div class="glass-panel px-3.5 py-1.5 sm:px-5 sm:py-2 rounded-2xl text-center pointer-events-auto border border-slate-700 flex items-center gap-3 sm:gap-5">
+                    <div>
+                        <div class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Match Round</div>
+                        <div id="hud-round" class="font-sports text-xl sm:text-3xl text-amber-300 leading-none">1 / 5</div>
+                    </div>
+                    <div class="h-6 sm:h-8 w-px bg-slate-700"></div>
+                    <div>
+                        <div class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total Points</div>
+                        <div id="hud-score" class="font-sports text-2xl sm:text-3xl text-emerald-400 leading-none">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shooting Hint / Instruction Banner -->
+        <div id="swipe-hint" class="absolute bottom-6 sm:bottom-12 left-1/2 -translate-x-1/2 z-20 pointer-events-none text-center w-11/12 max-w-md">
+            <div class="glass-panel px-4 py-2 sm:px-6 sm:py-3 rounded-full border border-amber-400/40 text-amber-300 font-semibold text-xs sm:text-sm animate-bounce shadow-2xl flex items-center justify-center gap-2">
+                <i class="fas fa-hand-pointer text-amber-400"></i> Swipe / Drag forward to shoot towards goal!
+            </div>
+        </div>
+
+        <!-- GOAL / MISS Penalty Result Flash Popup -->
+        <div id="shot-result-modal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+            <div id="shot-result-box" class="glass-panel rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center border-2 transform transition-transform">
+                <div id="shot-result-icon" class="text-5xl sm:text-6xl mb-2">⚽</div>
+                <h2 id="shot-result-title" class="text-4xl sm:text-5xl font-sports font-bold tracking-wider mb-1">GOAL!</h2>
+                <p id="shot-result-desc" class="text-slate-300 text-xs sm:text-sm mb-5">Superb Kick! Score multiplier 2x Unlocked for Chinese Challenge!</p>
+                <button onclick="proceedToSentencePhase()" class="w-full py-3 sm:py-3.5 rounded-xl font-sports text-lg sm:text-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-bold hover:brightness-110 transition-all shadow-lg">
+                    CONTINUE TO CHINESE CHALLENGE <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 2: Chinese Sentence Grammar Modal -->
+    <div id="modal-sentence" class="hidden fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-hidden">
+        <div class="sentence-modal-box glass-panel rounded-3xl max-w-2xl w-full p-3.5 sm:p-7 border border-amber-500/30 shadow-2xl relative my-auto">
+            
+            <!-- Left Side in Landscape: Prompts & Multiplier Status -->
+            <div class="flex flex-col justify-between space-y-2">
+                <!-- Round Badge & Multiplier Status -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-300">Phase 2: Grammar</span>
+                    </div>
+                    <div id="sentence-multiplier-badge" class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center gap-1">
+                        <i class="fas fa-fire text-amber-400"></i> 2x Active
+                    </div>
+                </div>
+
+                <!-- English Sentence Prompt -->
+                <div class="glass-card rounded-2xl p-2.5 sm:p-4 text-center border border-slate-700 my-auto">
+                    <div class="text-[9px] sm:text-xs font-bold uppercase tracking-widest text-slate-400 mb-0.5">Translate to Chinese:</div>
+                    <div id="prompt-english" class="text-base sm:text-2xl font-bold text-amber-300">"My hobby is camping."</div>
+                </div>
+
+                <!-- Action Section (Submit Button) -->
+                <div class="pt-1 border-t border-slate-800">
+                    <button onclick="submitSentenceAnswer()" class="w-full py-2 sm:py-3 rounded-xl font-sports text-base sm:text-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold hover:brightness-110 active:scale-98 transition-all shadow-lg glow-green flex items-center justify-center gap-2">
+                        <i class="fas fa-check-circle"></i> SUBMIT ANSWER
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Side in Landscape: Sentence Builder & Card Bank -->
+            <div class="space-y-2">
+                <!-- Sentence Construction Box (Target Drop Zone) -->
+                <div>
+                    <div class="flex items-center justify-between text-[10px] sm:text-xs text-slate-400 font-semibold mb-1">
+                        <span>YOUR SENTENCE BUILDER:</span>
+                        <button onclick="resetCurrentSentence()" class="text-amber-400 hover:underline flex items-center gap-1">
+                            <i class="fas fa-undo-alt"></i> Reset
+                        </button>
+                    </div>
+                    <div id="sentence-dropzone" class="min-h-[55px] sm:min-h-[90px] p-2 rounded-2xl bg-slate-900/90 border-2 border-dashed border-amber-400/50 flex flex-wrap items-center justify-center gap-1.5 transition-colors">
+                        <div id="dropzone-placeholder" class="text-slate-500 text-[10px] sm:text-sm font-zh text-center w-full py-1 sm:py-3">
+                            Tap Chinese word cards below to arrange the sentence here...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scrambled Word Cards Bank -->
+                <div>
+                    <div class="text-[10px] sm:text-xs text-slate-400 font-semibold mb-1">AVAILABLE WORD CARDS:</div>
+                    <div id="word-cards-bank" class="flex flex-wrap items-center justify-center gap-1.5 min-h-[50px] p-0.5">
+                        <!-- Word cards populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Round Result Summary Modal -->
+    <div id="modal-round-summary" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+        <div class="glass-panel rounded-3xl max-w-sm w-full p-6 sm:p-7 text-center border-2 border-slate-700 shadow-2xl relative my-auto">
+            <div id="summary-badge-icon" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl sm:text-4xl mb-2 border border-emerald-500/40">
+                <i class="fas fa-check"></i>
+            </div>
+            <h2 id="summary-title" class="text-2xl sm:text-3xl font-bold font-sports tracking-wider mb-1">EXCELLENT!</h2>
+            <p id="summary-subtitle" class="text-xs sm:text-sm text-slate-300 mb-3 font-zh">Correct sentence structure!</p>
+
+            <!-- Listen Pronunciation Helper -->
+            <button onclick="speakCurrentSentencePrompt()" class="mx-auto mb-4 px-3.5 py-1.5 rounded-xl glass-card text-xs font-semibold text-sky-300 hover:text-white hover:bg-slate-700 transition-all flex items-center gap-2 border border-sky-500/30">
+                <i class="fas fa-volume-up text-sm"></i> Listen Pronunciation
+            </button>
+
+            <!-- Calculation Breakdown Card -->
+            <div class="glass-card rounded-2xl p-3 text-left space-y-1.5 mb-4 text-xs sm:text-sm border border-slate-700">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">Base Sentence Marks:</span>
+                    <span id="summary-base-pts" class="font-bold text-amber-300">+10 PTS</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">Penalty Goal Multiplier:</span>
+                    <span id="summary-multiplier" class="font-bold text-emerald-400">2x Multiplier</span>
+                </div>
+                <div class="h-px bg-slate-700 my-1"></div>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="font-bold text-white">Points Earned This Round:</span>
+                    <span id="summary-round-pts" class="font-sports text-xl sm:text-2xl font-bold text-emerald-400">+20 PTS</span>
+                </div>
+            </div>
+
+            <button onclick="nextRound()" class="w-full py-3 rounded-xl font-sports text-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-bold hover:brightness-110 transition-all shadow-lg">
+                NEXT MATCH ROUND <i class="fas fa-play ml-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Leaderboard & End Tournament Screen -->
+    <div id="screen-leaderboard" class="hidden fixed inset-0 z-50 overflow-hidden stadium-bg p-2 sm:p-6 flex flex-col items-center justify-center">
+        <div class="leaderboard-grid-container max-w-4xl w-full my-auto gap-3">
+            
+            <!-- Left Side: Tournament Trophy Banner & Score Summary -->
+            <div class="glass-panel rounded-3xl p-4 sm:p-8 text-center border border-amber-500/40 relative flex flex-col justify-between">
+                <div>
+                    <div class="text-3xl sm:text-6xl mb-1 animate-bounce">🏆</div>
+                    <h1 class="text-2xl sm:text-5xl font-sports font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 mb-0.5">
+                        TOURNAMENT COMPLETED!
+                    </h1>
+                    <p id="final-player-title" class="text-slate-300 font-semibold text-[11px] sm:text-sm mb-2">Congratulations Player!</p>
+
+                    <div class="grid grid-cols-3 gap-1.5 sm:gap-3 max-w-md mx-auto mb-2">
+                        <div class="glass-card rounded-2xl p-2 text-center border border-slate-700">
+                            <div class="text-[8px] sm:text-xs text-slate-400 uppercase font-bold">Total Score</div>
+                            <div id="final-total-score" class="font-sports text-xl sm:text-3xl font-bold text-amber-400">0</div>
+                        </div>
+                        <div class="glass-card rounded-2xl p-2 text-center border border-slate-700">
+                            <div class="text-[8px] sm:text-xs text-slate-400 uppercase font-bold">Goals Scored</div>
+                            <div id="final-goals-count" class="font-sports text-xl sm:text-3xl font-bold text-emerald-400">0 / 5</div>
+                        </div>
+                        <div class="glass-card rounded-2xl p-2 text-center border border-slate-700">
+                            <div class="text-[8px] sm:text-xs text-slate-400 uppercase font-bold">Sentences</div>
+                            <div id="final-sentences-count" class="font-sports text-xl sm:text-3xl font-bold text-sky-400">0 / 5</div>
+                        </div>
+                    </div>
+
+                    <div id="sync-status-msg" class="text-[10px] text-amber-300 mb-2 hidden">
+                        <i class="fas fa-sync fa-spin"></i> Syncing score...
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 justify-center pt-2">
+                    <button onclick="restartGame()" class="px-4 py-2 rounded-xl font-sports text-base sm:text-lg bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-bold hover:brightness-110 transition-all shadow-lg flex items-center gap-1.5">
+                        <i class="fas fa-redo"></i> PLAY AGAIN
+                    </button>
+                    <button onclick="openAdminModal()" class="px-4 py-2 rounded-xl glass-card text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-700 transition-all flex items-center gap-1.5 border border-slate-600">
+                        <i class="fas fa-chart-bar"></i> ADMIN
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Side: In-Game Local Leaderboard Table -->
+            <div class="glass-panel rounded-3xl p-3 sm:p-5 border border-slate-700 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-sports text-lg sm:text-2xl text-amber-400 flex items-center gap-2">
+                        <i class="fas fa-list-ol"></i> TOP PLAYERS SCOREBOARD
+                    </h3>
+                    <span class="text-[10px] text-slate-400">Live</span>
+                </div>
+                <div class="overflow-x-auto max-h-44 sm:max-h-52 overflow-y-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-700 text-slate-400 text-[9px] sm:text-xs uppercase sticky top-0 bg-slate-900/90">
+                                <th class="py-1.5 px-2">Rank</th>
+                                <th class="py-1.5 px-2">Player</th>
+                                <th class="py-1.5 px-2">Team</th>
+                                <th class="py-1.5 px-2 text-center">Goals</th>
+                                <th class="py-1.5 px-2 text-right">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-table-body" class="divide-y divide-slate-800 text-slate-200">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="modal-admin" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md overflow-y-auto">
+        <div class="glass-panel rounded-3xl max-w-2xl w-full p-5 sm:p-7 border border-sky-500/30 shadow-2xl relative max-h-[92dvh] overflow-y-auto my-auto">
+            
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-lg border border-sky-500/40">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl sm:text-2xl font-sports font-bold text-white leading-tight">TEACHER / ADMIN DASHBOARD</h3>
+                        <p class="text-xs text-slate-400">Google Sheets Integration & Student Records</p>
+                    </div>
+                </div>
+                <button onclick="closeAdminModal()" class="w-8 h-8 rounded-full glass-card text-slate-400 hover:text-white flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Tab Navigation Buttons -->
+            <div class="flex border-b border-slate-800 mb-4 gap-2">
+                <button id="tab-btn-gsheet" onclick="switchAdminTab('gsheet')" class="py-2 px-4 text-xs sm:text-sm font-bold rounded-t-xl bg-sky-600/30 text-sky-300 border-t border-x border-sky-500/40">
+                    <i class="fas fa-file-excel mr-1"></i> Google Sheets Live Sync
+                </button>
+                <button id="tab-btn-records" onclick="switchAdminTab('records')" class="py-2 px-4 text-xs sm:text-sm font-bold rounded-t-xl text-slate-400 hover:text-slate-200">
+                    <i class="fas fa-database mr-1"></i> Local Records
+                </button>
+            </div>
+
+            <!-- Tab Content: Google Sheets Setup -->
+            <div id="tab-content-gsheet" class="space-y-4">
+                <div class="glass-card rounded-2xl p-4 text-xs text-slate-300 space-y-2 border border-slate-700">
+                    <div class="font-bold text-sky-300 text-sm flex items-center gap-1.5">
+                        <i class="fas fa-info-circle"></i> Google Apps Script Setup Instructions:
+                    </div>
+                    <ol class="list-decimal list-inside space-y-1 pl-1 text-slate-300">
+                        <li>Buka Google Sheet baharu & pergi ke <b>Extensions &gt; Apps Script</b>.</li>
+                        <li>Tampal kod Apps Script di bawah dan tekan <b>Deploy &gt; New deployment</b>.</li>
+                        <li>Pilih <b>Web app</b>, tetapkan Access kepada <b>"Anyone"</b>, kemudian Deploy.</li>
+                        <li>Salin URL Web App dan tampal ke dalam ruang di bawah.</li>
+                    </ol>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Google Apps Script Web App URL (Post Endpoint)</label>
+                    <input type="text" id="input-gsheet-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-sky-400">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Google Sheet Public View URL (Optional)</label>
+                    <input type="text" id="input-gsheet-view-url" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-sky-400">
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="saveGoogleSheetUrl()" class="px-5 py-2.5 rounded-xl font-bold text-xs bg-sky-500 text-slate-950 hover:bg-sky-400 transition-all flex items-center gap-1.5">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                    <a id="link-open-gsheet" href="#" target="_blank" class="px-5 py-2.5 rounded-xl font-bold text-xs glass-card text-sky-300 hover:text-white transition-all opacity-50 pointer-events-none flex items-center gap-1.5 border border-sky-500/30">
+                        <i class="fas fa-external-link-alt"></i> Open Google Sheet
+                    </a>
+                </div>
+
+                <!-- Copy Apps Script snippet code -->
+                <div class="relative">
+                    <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                        <span>Google Apps Script Code Snippet:</span>
+                        <button onclick="copyAppsScriptCode()" class="text-sky-400 hover:underline flex items-center gap-1">
+                            <i class="fas fa-copy"></i> Copy Code
+                        </button>
+                    </div>
+                    <pre id="code-apps-script" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[10px] text-emerald-400 font-mono overflow-x-auto max-h-36">
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Timestamp", "Player Name", "Team", "Total Score", "Goals Scored", "Sentences Correct", "Accuracy %"]);
+  }
+  
+  sheet.appendRow([
+    new Date(),
+    data.playerName,
+    data.team,
+    data.totalScore,
+    data.goalsScored,
+    data.sentencesCorrect,
+    data.accuracy + "%"
+  ]);
+  
+  return ContentService.createTextOutput(JSON.stringify({"result": "success"})).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var rows = sheet.getDataRange().getValues();
+  var result = [];
+  var headers = rows[0];
+  
+  for (var i = 1; i < rows.length; i++) {
+    var obj = {};
+    for (var j = 0; j < headers.length; j++) {
+      obj[headers[j]] = rows[i][j];
+    }
+    result.push(obj);
+  }
+  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+}</pre>
+                </div>
+            </div>
+
+            <!-- Tab Content: Local Records Table -->
+            <div id="tab-content-records" class="hidden space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-400">Stored locally in current browser session:</span>
+                    <div class="flex gap-2">
+                        <button onclick="exportScoresCSV()" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-600/30 text-emerald-300 hover:bg-emerald-600/50 border border-emerald-500/40 flex items-center gap-1">
+                            <i class="fas fa-file-csv"></i> Export CSV
+                        </button>
+                        <button onclick="clearLocalRecords()" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-600/30 text-rose-300 hover:bg-rose-600/50 border border-rose-500/40 flex items-center gap-1">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-60 overflow-y-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900 text-slate-400 uppercase text-[10px]">
+                            <tr>
+                                <th class="p-2.5">Time</th>
+                                <th class="p-2.5">Player</th>
+                                <th class="p-2.5">Team</th>
+                                <th class="p-2.5 text-center">Goals</th>
+                                <th class="p-2.5 text-center">Sentences</th>
+                                <th class="p-2.5 text-right">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body" class="divide-y divide-slate-800 text-slate-300">
+                            <!-- Dynamically loaded -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        // Target Vocabulary List for Year 5 Chinese: 我爱露营
+        const QUESTION_DATABASE = [
+            {
+                id: 1,
+                englishPrompt: "My hobby is camping.",
+                correctSequence: ["我的", "爱好", "是", "露营"],
+                words: [
+                    { zh: "我的", pinyin: "wǒ de" },
+                    { zh: "爱好", pinyin: "ài hào" },
+                    { zh: "是", pinyin: "shì" },
+                    { zh: "露营", pinyin: "lù yíng" }
+                ],
+                distractors: [
+                    { zh: "阅读", pinyin: "yuè dú" },
+                    { zh: "下棋", pinyin: "xià qí" }
+                ]
+            },
+            {
+                id: 2,
+                englishPrompt: "My hobby is sketching.",
+                correctSequence: ["我的", "爱好", "是", "写生"],
+                words: [
+                    { zh: "我的", pinyin: "wǒ de" },
+                    { zh: "爱好", pinyin: "ài hào" },
+                    { zh: "是", pinyin: "shì" },
+                    { zh: "写生", pinyin: "xiě shēng" }
+                ],
+                distractors: [
+                    { zh: "种花", pinyin: "zhòng huā" },
+                    { zh: "露营", pinyin: "lù yíng" }
+                ]
+            },
+            {
+                id: 3,
+                englishPrompt: "My hobby is playing chess.",
+                correctSequence: ["我的", "爱好", "是", "下棋"],
+                words: [
+                    { zh: "我的", pinyin: "wǒ de" },
+                    { zh: "爱好", pinyin: "ài hào" },
+                    { zh: "是", pinyin: "shì" },
+                    { zh: "下棋", pinyin: "xià qí" }
+                ],
+                distractors: [
+                    { zh: "写生", pinyin: "xiě shēng" },
+                    { zh: "种花", pinyin: "zhòng huā" }
+                ]
+            },
+            {
+                id: 4,
+                englishPrompt: "My hobby is reading.",
+                correctSequence: ["我的", "爱好", "是", "阅读"],
+                words: [
+                    { zh: "我的", pinyin: "wǒ de" },
+                    { zh: "爱好", pinyin: "ài hào" },
+                    { zh: "是", pinyin: "shì" },
+                    { zh: "阅读", pinyin: "yuè dú" }
+                ],
+                distractors: [
+                    { zh: "下棋", pinyin: "xià qí" },
+                    { zh: "露营", pinyin: "lù yíng" }
+                ]
+            },
+            {
+                id: 5,
+                englishPrompt: "My hobby is gardening / planting flowers.",
+                correctSequence: ["我的", "爱好", "是", "种花"],
+                words: [
+                    { zh: "我的", pinyin: "wǒ de" },
+                    { zh: "爱好", pinyin: "ài hào" },
+                    { zh: "是", pinyin: "shì" },
+                    { zh: "种花", pinyin: "zhòng huā" }
+                ],
+                distractors: [
+                    { zh: "写生", pinyin: "xiě shēng" },
+                    { zh: "阅读", pinyin: "yuè dú" }
+                ]
+            }
+        ];
+
+        // National Teams Options
+        const NATIONAL_TEAMS = [
+            { id: 'MAS', name: 'Malaysia', flag: '🇲🇾' },
+            { id: 'BRA', name: 'Brazil', flag: '🇧🇷' },
+            { id: 'ARG', name: 'Argentina', flag: '🇦🇷' },
+            { id: 'FRA', name: 'France', flag: '🇫🇷' },
+            { id: 'ENG', name: 'England', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+            { id: 'JPN', name: 'Japan', flag: '🇯🇵' },
+            { id: 'GER', name: 'Germany', flag: '🇩🇪' },
+            { id: 'ESP', name: 'Spain', flag: '🇪🇸' }
+        ];
+
+        // Game Runtime Variables
+        let selectedTeam = NATIONAL_TEAMS[0];
+        let playerName = "";
+        let currentRoundIndex = 0;
+        let totalScore = 0;
+        let goalsCount = 0;
+        let correctSentencesCount = 0;
+        let isGoalScoredThisRound = false;
+        let selectedWordSequence = [];
+        let isAudioMuted = false;
+        let gsheetUrl = "https://script.google.com/macros/s/AKfycbxy3uJkH4-suMUbKHZorZW6xGdlgQ_45nvv9ulzj8U6lZ2B2xVJeEToZU8es2Max2Dw/exec";
+        let gsheetViewUrl = "";
+
+        // Web Audio Synthesizer System
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (isAudioMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'kick') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+                gain.gain.setValueAtTime(0.8, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'cheer') {
+                const bufferSize = audioCtx.sampleRate * 1.0;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 1000;
+                
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.3, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+                
+                noise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                noise.start(now);
+            } else if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.3);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+        }
+
+        function toggleAudio() {
+            isAudioMuted = !isAudioMuted;
+            const btn = document.getElementById('btn-audio');
+            if (isAudioMuted) {
+                btn.innerHTML = '<i class="fas fa-volume-mute text-slate-500"></i>';
+            } else {
+                btn.innerHTML = '<i class="fas fa-volume-up text-amber-400"></i>';
+                playSound('correct');
+            }
+        }
+
+        let scene, camera, renderer;
+        let ballMesh, goalkeeperMesh, goalPostGroup;
+        let isShotInProgress = false;
+        let ballVelocity = new THREE.Vector3();
+        let goalkeeperTargetX = 0;
+        let goalkeeperJumpY = 0;
+
+        function init3DScene() {
+            const container = document.getElementById('canvas-container');
+            container.innerHTML = '';
+
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0c1322);
+            scene.fog = new THREE.FogExp2(0x0c1322, 0.015);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(0, 1.6, 12); // Behind penalty spot
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const stadiumLight1 = new THREE.DirectionalLight(0xfffaed, 1.2);
+            stadiumLight1.position.set(10, 20, 10);
+            stadiumLight1.castShadow = true;
+            stadiumLight1.shadow.mapSize.width = 1024;
+            stadiumLight1.shadow.mapSize.height = 1024;
+            scene.add(stadiumLight1);
+
+            const stadiumLight2 = new THREE.DirectionalLight(0x38bdf8, 0.5);
+            stadiumLight2.position.set(-10, 15, -10);
+            scene.add(stadiumLight2);
+
+            // Pitch Grass Floor
+            const pitchGeo = new THREE.PlaneGeometry(60, 80);
+            const pitchMat = new THREE.MeshStandardMaterial({ color: 0x1e5a32, roughness: 0.8 });
+            const pitchMesh = new THREE.Mesh(pitchGeo, pitchMat);
+            pitchMesh.rotation.x = -Math.PI / 2;
+            pitchMesh.receiveShadow = true;
+            scene.add(pitchMesh);
+
+            // Pitch Lines (Penalty Area & Spot)
+            const spotGeo = new THREE.CircleGeometry(0.15, 32);
+            const spotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const spotMesh = new THREE.Mesh(spotGeo, spotMat);
+            spotMesh.rotation.x = -Math.PI / 2;
+            spotMesh.position.set(0, 0.01, 8);
+            scene.add(spotMesh);
+
+            // Goal Post Construction
+            goalPostGroup = new THREE.Group();
+            const postMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 });
+
+            const postRadius = 0.1;
+            const goalWidth = 7.32;
+            const goalHeight = 2.44;
+
+            // Left Post
+            const leftPost = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 16), postMat);
+            leftPost.position.set(-goalWidth / 2, goalHeight / 2, 0);
+            leftPost.castShadow = true;
+            goalPostGroup.add(leftPost);
+
+            // Right Post
+            const rightPost = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 16), postMat);
+            rightPost.position.set(goalWidth / 2, goalHeight / 2, 0);
+            rightPost.castShadow = true;
+            goalPostGroup.add(rightPost);
+
+            // Crossbar
+            const crossbar = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, goalWidth, 16), postMat);
+            crossbar.rotation.z = Math.PI / 2;
+            crossbar.position.set(0, goalHeight, 0);
+            crossbar.castShadow = true;
+            goalPostGroup.add(crossbar);
+
+            // Goal Net (Wireframe Mesh)
+            const netGeo = new THREE.BoxGeometry(goalWidth, goalHeight, 1.5);
+            const netMat = new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true, transparent: true, opacity: 0.25 });
+            const netMesh = new THREE.Mesh(netGeo, netMat);
+            netMesh.position.set(0, goalHeight / 2, -0.75);
+            goalPostGroup.add(netMesh);
+
+            scene.add(goalPostGroup);
+
+            // 3D Football Mesh
+            const ballGeo = new THREE.SphereGeometry(0.22, 32, 32);
+            const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+            ballMesh = new THREE.Mesh(ballGeo, ballMat);
+            ballMesh.position.set(0, 0.22, 8); // At penalty spot
+            ballMesh.castShadow = true;
+            scene.add(ballMesh);
+
+            // 3D Goalkeeper Mesh
+            createGoalkeeperMesh();
+
+            // Resize Event Listener
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Render loop initialization
+            animate3D();
+        }
+
+        function createGoalkeeperMesh() {
+            goalkeeperMesh = new THREE.Group();
+
+            const jerseyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 });
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.6 });
+
+            // Torso
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.4), jerseyMat);
+            torso.position.y = 1.25;
+            torso.castShadow = true;
+            goalkeeperMesh.add(torso);
+
+            // Head
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), skinMat);
+            head.position.y = 1.9;
+            head.castShadow = true;
+            goalkeeperMesh.add(head);
+
+            // Left Arm & Glove
+            const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.2), jerseyMat);
+            leftArm.position.set(-0.5, 1.3, 0);
+            leftArm.rotation.z = 0.2;
+            goalkeeperMesh.add(leftArm);
+
+            // Right Arm & Glove
+            const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.2), jerseyMat);
+            rightArm.position.set(0.5, 1.3, 0);
+            rightArm.rotation.z = -0.2;
+            goalkeeperMesh.add(rightArm);
+
+            // Legs
+            const legsMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+            const legs = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.3), legsMat);
+            legs.position.y = 0.4;
+            legs.castShadow = true;
+            goalkeeperMesh.add(legs);
+
+            goalkeeperMesh.position.set(0, 0, 0.2); // Standing on goal line
+            scene.add(goalkeeperMesh);
+        }
+
+        function resetBallAndKeeper() {
+            ballMesh.position.set(0, 0.22, 8);
+            ballVelocity.set(0, 0, 0);
+            goalkeeperMesh.position.set(0, 0, 0.2);
+            goalkeeperMesh.rotation.set(0, 0, 0);
+            isShotInProgress = false;
+            document.getElementById('swipe-hint').style.display = 'block';
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+
+            // Idle Goalkeeper side-to-side movement before kick
+            if (!isShotInProgress && goalkeeperMesh) {
+                goalkeeperMesh.position.x = Math.sin(Date.now() * 0.003) * 0.8;
+            }
+
+            // Ball Physics Animation during shot
+            if (isShotInProgress) {
+                ballMesh.position.add(ballVelocity);
+                ballMesh.rotation.x -= 0.2;
+
+                // Goalkeeper AI Dive Movement
+                goalkeeperMesh.position.x += (goalkeeperTargetX - goalkeeperMesh.position.x) * 0.06;
+                if (goalkeeperJumpY > 0) {
+                    goalkeeperMesh.position.y = Math.sin((8 - ballMesh.position.z) / 8 * Math.PI) * goalkeeperJumpY;
+                }
+
+                // Check Goal Plane Collision (z <= 0)
+                if (ballMesh.position.z <= 0.2) {
+                    isShotInProgress = false;
+                    evaluateShotOutcome();
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            if (!container || !renderer) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+
+        function setupSwipeControls() {
+            const canvas = document.getElementById('swipe-canvas');
+            const ctx = canvas.getContext('2d');
+
+            function resizeSwipeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resizeSwipeCanvas();
+            window.addEventListener('resize', resizeSwipeCanvas);
+
+            function handleStart(x, y) {
+                if (isShotInProgress) return;
+                touchStartX = x;
+                touchStartY = y;
+                touchStartTime = Date.now();
+            }
+
+            function handleEnd(x, y) {
+                if (isShotInProgress) return;
+                const deltaX = x - touchStartX;
+                const deltaY = y - touchStartY;
+                const timeDiff = Date.now() - touchStartTime;
+
+                if (deltaY < -40 && timeDiff < 800) {
+                    shootBall(deltaX, deltaY, timeDiff);
+                }
+            }
+
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleStart(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: false });
+
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                handleEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            }, { passive: false });
+
+            let isMouseDown = false;
+            canvas.addEventListener('mousedown', (e) => {
+                isMouseDown = true;
+                handleStart(e.clientX, e.clientY);
+            });
+
+            canvas.addEventListener('mouseup', (e) => {
+                if (isMouseDown) {
+                    isMouseDown = false;
+                    handleEnd(e.clientX, e.clientY);
+                }
+            });
+        }
+
+        function shootBall(deltaX, deltaY, duration) {
+            document.getElementById('swipe-hint').style.display = 'none';
+            isShotInProgress = true;
+            playSound('kick');
+
+            const speedFactor = Math.min(Math.max(1000 / duration, 1.5), 3.5);
+            const targetX = (deltaX / window.innerWidth) * 7.5;
+            const targetY = Math.min(Math.abs(deltaY / window.innerHeight) * 3.5, 2.6);
+
+            ballVelocity.set(
+                (targetX - ballMesh.position.x) * 0.045,
+                (targetY - ballMesh.position.y) * 0.045,
+                -0.38
+            );
+
+            const keeperWillGuessCorrectly = Math.random() < 0.25;
+            if (keeperWillGuessCorrectly) {
+                goalkeeperTargetX = targetX * 0.70;
+                goalkeeperJumpY = targetY > 1.2 ? 0.6 : 0.15;
+            } else {
+                goalkeeperTargetX = (Math.random() - 0.5) * 5.0;
+                goalkeeperJumpY = Math.random() * 0.4;
+            }
+        }
+
+        function evaluateShotOutcome() {
+            const ballX = ballMesh.position.x;
+            const ballY = ballMesh.position.y;
+            const keeperX = goalkeeperMesh.position.x;
+            const keeperY = goalkeeperMesh.position.y + 0.9;
+
+            const goalWidthRadius = 3.5;
+            const goalHeightMax = 2.4;
+
+            const distToKeeper = Math.hypot(ballX - keeperX, ballY - keeperY);
+
+            const isInsideGoalPosts = Math.abs(ballX) <= goalWidthRadius && ballY >= 0.1 && ballY <= goalHeightMax;
+            const isSavedByKeeper = distToKeeper < 0.62;
+
+            if (isInsideGoalPosts && !isSavedByKeeper) {
+                isGoalScoredThisRound = true;
+                goalsCount++;
+                playSound('cheer');
+                confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
+                showShotResultModal(true, "GOAL SCORED!", "Superb Penalty Kick! Score multiplier 2x activated for the Chinese Challenge!");
+            } else {
+                isGoalScoredThisRound = false;
+                playSound('wrong');
+                showShotResultModal(false, isSavedByKeeper ? "SAVED BY KEEPER!" : "SHOT MISSED!", "No multiplier earned this round, but you can still earn +10 PTS for a correct sentence!");
+            }
+        }
+
+        function showShotResultModal(isGoal, title, desc) {
+            const modal = document.getElementById('shot-result-modal');
+            const box = document.getElementById('shot-result-box');
+            const icon = document.getElementById('shot-result-icon');
+            const titleEl = document.getElementById('shot-result-title');
+            const descEl = document.getElementById('shot-result-desc');
+
+            icon.innerHTML = isGoal ? '⚽🔥' : '🧤❌';
+            titleEl.textContent = title;
+            titleEl.className = `text-4xl sm:text-5xl font-sports font-bold tracking-wider mb-2 ${isGoal ? 'text-emerald-400' : 'text-rose-400'}`;
+            descEl.textContent = desc;
+
+            box.className = `glass-panel rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center border-2 ${isGoal ? 'border-emerald-500/50 glow-green' : 'border-rose-500/50 glow-red'}`;
+
+            modal.classList.remove('hidden');
+        }
+
+        function proceedToSentencePhase() {
+            document.getElementById('shot-result-modal').classList.add('hidden');
+            
+            const question = QUESTION_DATABASE[currentRoundIndex];
+            document.getElementById('prompt-english').textContent = `"${question.englishPrompt}"`;
+
+            const badge = document.getElementById('sentence-multiplier-badge');
+            if (isGoalScoredThisRound) {
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex items-center gap-1.5";
+                badge.innerHTML = '<i class="fas fa-fire text-amber-400"></i> GOAL SCORED: 2x MULTIPLIER ACTIVE!';
+            } else {
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5";
+                badge.innerHTML = '<i class="fas fa-info-circle"></i> Standard Points Mode (+10 PTS)';
+            }
+
+            let allCards = [...question.words, ...question.distractors];
+            allCards = allCards.sort(() => Math.random() - 0.5);
+
+            const bankContainer = document.getElementById('word-cards-bank');
+            bankContainer.innerHTML = '';
+
+            allCards.forEach((item) => {
+                const card = document.createElement('button');
+                card.className = "word-card glass-card px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl border border-amber-400/30 hover:border-amber-400 text-center flex flex-col items-center shadow-md active:scale-95";
+                card.dataset.zh = item.zh;
+                card.dataset.pinyin = item.pinyin;
+                card.innerHTML = `
+                    <span class="text-xs text-amber-300 font-mono tracking-tight mb-0.5">${item.pinyin}</span>
+                    <span class="text-2xl sm:text-3xl font-zh font-bold text-white">${item.zh}</span>
+                `;
+                card.onclick = () => addWordToSentence(item, card);
+                bankContainer.appendChild(card);
+            });
+
+            resetCurrentSentence();
+            document.getElementById('modal-sentence').classList.remove('hidden');
+        }
+
+        function addWordToSentence(wordObj, cardElement) {
+            selectedWordSequence.push(wordObj);
+            cardElement.style.display = 'none';
+
+            renderDropzone();
+            playSound('correct');
+        }
+
+        function renderDropzone() {
+            const dropzone = document.getElementById('sentence-dropzone');
+            dropzone.innerHTML = '';
+
+            if (selectedWordSequence.length === 0) {
+                dropzone.innerHTML = `
+                    <div id="dropzone-placeholder" class="text-slate-500 text-xs sm:text-sm font-zh text-center w-full py-3">
+                        Tap Chinese word cards below to arrange the sentence here...
+                    </div>
+                `;
+                return;
+            }
+
+            selectedWordSequence.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = "word-card bg-amber-500/20 border border-amber-400/60 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl flex flex-col items-center relative group cursor-pointer";
+                card.innerHTML = `
+                    <span class="text-xs text-amber-300 font-mono">${item.pinyin}</span>
+                    <span class="text-xl sm:text-2xl font-zh font-bold text-white">${item.zh}</span>
+                    <span class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">×</span>
+                `;
+                card.onclick = () => removeWordFromSentence(index, item);
+                dropzone.appendChild(card);
+            });
+        }
+
+        function removeWordFromSentence(index, wordObj) {
+            selectedWordSequence.splice(index, 1);
+            
+            const bankCards = document.querySelectorAll('#word-cards-bank .word-card');
+            bankCards.forEach(card => {
+                if (card.dataset.zh === wordObj.zh && card.style.display === 'none') {
+                    card.style.display = 'flex';
+                }
+            });
+
+            renderDropzone();
+        }
+
+        function resetCurrentSentence() {
+            selectedWordSequence = [];
+            const bankCards = document.querySelectorAll('#word-cards-bank .word-card');
+            bankCards.forEach(card => card.style.display = 'flex');
+            renderDropzone();
+        }
+
+        function speakCurrentSentencePrompt() {
+            if ('speechSynthesis' in window) {
+                const question = QUESTION_DATABASE[currentRoundIndex];
+                const text = question.correctSequence.join('');
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.85;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function submitSentenceAnswer() {
+            const question = QUESTION_DATABASE[currentRoundIndex];
+            const userArr = selectedWordSequence.map(w => w.zh);
+            const isCorrect = JSON.stringify(userArr) === JSON.stringify(question.correctSequence);
+
+            document.getElementById('modal-sentence').classList.add('hidden');
+
+            let basePts = isCorrect ? 10 : 0;
+            let roundMultiplier = isGoalScoredThisRound ? 2 : 1;
+            let totalRoundPts = basePts * roundMultiplier;
+
+            if (isCorrect) {
+                correctSentencesCount++;
+                totalScore += totalRoundPts;
+                playSound('correct');
+            } else {
+                playSound('wrong');
+            }
+
+            const summaryTitle = document.getElementById('summary-title');
+            const summarySub = document.getElementById('summary-subtitle');
+            const summaryIcon = document.getElementById('summary-badge-icon');
+
+            if (isCorrect) {
+                summaryTitle.textContent = isGoalScoredThisRound ? "GOAL & PERFECT GRAMMAR!" : "CORRECT GRAMMAR!";
+                summaryTitle.className = "text-3xl font-bold font-sports tracking-wider mb-1 text-emerald-400";
+                summarySub.textContent = `Correct Sentence: ${question.correctSequence.join('')}。`;
+                summaryIcon.className = "w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl sm:text-4xl mb-2 border border-emerald-500/40";
+                summaryIcon.innerHTML = '<i class="fas fa-check"></i>';
+            } else {
+                summaryTitle.textContent = "INCORRECT SENTENCE!";
+                summaryTitle.className = "text-3xl font-bold font-sports tracking-wider mb-1 text-rose-400";
+                summarySub.textContent = `Correct Order: ${question.correctSequence.join('')}。`;
+                summaryIcon.className = "w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-3xl sm:text-4xl mb-2 border border-rose-500/40";
+                summaryIcon.innerHTML = '<i class="fas fa-times"></i>';
+            }
+
+            document.getElementById('summary-base-pts').textContent = `+${basePts} PTS`;
+            document.getElementById('summary-multiplier').textContent = `${roundMultiplier}x Multiplier`;
+            document.getElementById('summary-round-pts').textContent = `+${totalRoundPts} PTS`;
+
+            document.getElementById('hud-score').textContent = totalScore;
+            document.getElementById('modal-round-summary').classList.remove('hidden');
+        }
+
+        function nextRound() {
+            document.getElementById('modal-round-summary').classList.add('hidden');
+            currentRoundIndex++;
+
+            if (currentRoundIndex < QUESTION_DATABASE.length) {
+                document.getElementById('hud-round').textContent = `${currentRoundIndex + 1} / ${QUESTION_DATABASE.length}`;
+                resetBallAndKeeper();
+            } else {
+                finishTournament();
+            }
+        }
+
+        function finishTournament() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-leaderboard').classList.remove('hidden');
+
+            document.getElementById('final-player-title').textContent = `${playerName} (${selectedTeam.name} ${selectedTeam.flag})`;
+            document.getElementById('final-total-score').textContent = totalScore;
+            document.getElementById('final-goals-count').textContent = `${goalsCount} / ${QUESTION_DATABASE.length}`;
+            document.getElementById('final-sentences-count').textContent = `${correctSentencesCount} / ${QUESTION_DATABASE.length}`;
+
+            confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+
+            saveLocalRecord();
+            syncToGoogleSheets();
+            renderLeaderboardTable();
+        }
+
+        function saveLocalRecord() {
+            const records = JSON.parse(localStorage.getItem('wc_chinese_records') || '[]');
+            const newRecord = {
+                id: Date.now(),
+                timestamp: new Date().toLocaleString(),
+                playerName: playerName,
+                team: `${selectedTeam.flag} ${selectedTeam.name}`,
+                totalScore: totalScore,
+                goalsScored: goalsCount,
+                sentencesCorrect: correctSentencesCount,
+                accuracy: Math.round((correctSentencesCount / QUESTION_DATABASE.length) * 100)
+            };
+            records.push(newRecord);
+            localStorage.setItem('wc_chinese_records', JSON.stringify(records));
+        }
+
+        function syncToGoogleSheets() {
+            if (!gsheetUrl) return;
+
+            const syncMsg = document.getElementById('sync-status-msg');
+            syncMsg.classList.remove('hidden');
+
+            const payload = {
+                playerName: playerName,
+                team: `${selectedTeam.flag} ${selectedTeam.name}`,
+                totalScore: totalScore,
+                goalsScored: goalsCount,
+                sentencesCorrect: correctSentencesCount,
+                accuracy: Math.round((correctSentencesCount / QUESTION_DATABASE.length) * 100)
+            };
+
+            fetch(gsheetUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                syncMsg.innerHTML = '<i class="fas fa-check-circle text-emerald-400"></i> Score synced live with Google Sheets!';
+            })
+            .catch(err => {
+                console.error("GSheet Sync Error:", err);
+                syncMsg.innerHTML = '<i class="fas fa-exclamation-triangle text-amber-400"></i> Sync error (Score saved locally).';
+            });
+        }
+
+        let isAdminAuthenticated = false;
+
+        function openAdminModal() {
+            if (!isAdminAuthenticated) {
+                document.getElementById('input-admin-pass').value = '';
+                document.getElementById('admin-pass-error').classList.add('hidden');
+                document.getElementById('modal-admin-auth').classList.remove('hidden');
+            } else {
+                document.getElementById('modal-admin').classList.remove('hidden');
+                renderAdminRecordsTable();
+            }
+        }
+
+        function closeAdminAuthModal() {
+            document.getElementById('modal-admin-auth').classList.add('hidden');
+        }
+
+        function verifyAdminPassword() {
+            const inputPass = document.getElementById('input-admin-pass').value.trim();
+            if (inputPass === 'admin123') {
+                isAdminAuthenticated = true;
+                document.getElementById('modal-admin-auth').classList.add('hidden');
+                document.getElementById('modal-admin').classList.remove('hidden');
+                renderAdminRecordsTable();
+            } else {
+                document.getElementById('admin-pass-error').classList.remove('hidden');
+            }
+        }
+
+        function renderLeaderboardTable() {
+            const tbody = document.getElementById('leaderboard-table-body');
+            const syncStatus = document.getElementById('sync-status-msg');
+            
+            if (gsheetUrl) {
+                if (syncStatus) {
+                    syncStatus.classList.remove('hidden');
+                    syncStatus.innerHTML = '<i class="fas fa-spinner fa-spin text-sky-400"></i> Memuatkan Scoreboard Google Sheet...';
+                }
+                
+                fetch(gsheetUrl)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (Array.isArray(data) && data.length > 0) {
+                            data.sort((a, b) => Number(b["Total Score"] || b.totalScore || 0) - Number(a["Total Score"] || a.totalScore || 0));
+                            tbody.innerHTML = '';
+                            data.slice(0, 10).forEach((rec, idx) => {
+                                const name = rec["Player Name"] || rec.playerName || "Pemain";
+                                const team = rec["Team"] || rec.team || "-";
+                                const goals = rec["Goals Scored"] !== undefined ? rec["Goals Scored"] : (rec.goalsScored || 0);
+                                const score = rec["Total Score"] !== undefined ? rec["Total Score"] : (rec.totalScore || 0);
+                                
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td class="py-2.5 px-3 font-sports text-xl text-amber-400">#${idx + 1}</td>
+                                    <td class="py-2.5 px-3 font-semibold">${name}</td>
+                                    <td class="py-2.5 px-3 text-xs sm:text-sm">${team}</td>
+                                    <td class="py-2.5 px-3 text-center text-xs sm:text-sm text-emerald-400">${goals} / 5</td>
+                                    <td class="py-2.5 px-3 text-right font-sports text-2xl text-amber-300 font-bold">${score}</td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                            if (syncStatus) syncStatus.innerHTML = '<i class="fas fa-check-circle text-emerald-400"></i> Scoreboard terkini dipaparkan dari Google Sheet Admin!';
+                            return;
+                        }
+                        renderLocalLeaderboardFallback("Admin belum memasukkan rekod dalam Google Sheet.");
+                    })
+                    .catch(() => {
+                        renderLocalLeaderboardFallback("Gagal memuatkan Google Sheet. Memaparkan skor tempatan.");
+                    });
+            } else {
+                renderLocalLeaderboardFallback("Scoreboard Google Sheet belum dikemas kini / diisi oleh Admin.");
+            }
+        }
+
+        function renderLocalLeaderboardFallback(statusMessage) {
+            const tbody = document.getElementById('leaderboard-table-body');
+            const syncStatus = document.getElementById('sync-status-msg');
+            
+            if (syncStatus) {
+                syncStatus.classList.remove('hidden');
+                syncStatus.innerHTML = `<i class="fas fa-info-circle text-amber-400"></i> ${statusMessage}`;
+            }
+
+            const records = JSON.parse(localStorage.getItem('wc_chinese_records') || '[]');
+            if (records.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-xs text-slate-400">Tiada rekod skor untuk dipaparkan.</td></tr>`;
+                return;
+            }
+
+            records.sort((a, b) => b.totalScore - a.totalScore);
+            tbody.innerHTML = '';
+            records.slice(0, 10).forEach((rec, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-2.5 px-3 font-sports text-xl text-amber-400">#${idx + 1}</td>
+                    <td class="py-2.5 px-3 font-semibold">${rec.playerName}</td>
+                    <td class="py-2.5 px-3 text-xs sm:text-sm">${rec.team}</td>
+                    <td class="py-2.5 px-3 text-center text-xs sm:text-sm text-emerald-400">${rec.goalsScored} / 5</td>
+                    <td class="py-2.5 px-3 text-right font-sports text-2xl text-amber-300 font-bold">${rec.totalScore}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function closeAdminModal() {
+            document.getElementById('modal-admin').classList.add('hidden');
+        }
+
+        function switchAdminTab(tab) {
+            const tabGsheet = document.getElementById('tab-btn-gsheet');
+            const tabRecords = document.getElementById('tab-btn-records');
+            const contentGsheet = document.getElementById('tab-content-gsheet');
+            const contentRecords = document.getElementById('tab-content-records');
+
+            if (tab === 'gsheet') {
+                tabGsheet.className = "py-2 px-4 text-xs sm:text-sm font-bold rounded-t-xl bg-sky-600/30 text-sky-300 border-t border-x border-sky-500/40";
+                tabRecords.className = "py-2 px-4 text-xs sm:text-sm font-bold rounded-t-xl text-slate-400 hover:text-slate-200";
+                contentGsheet.classList.remove('hidden');
+                contentRecords.classList.add('hidden');
+            } else {
+                tabRecords.className = "py-2 px-4 text-xs sm:text-sm font-bold rounded-t-xl bg-sky-600/30 text-sky-300 border-t border-x border-sky-500/40";
+                tabGsheet.className = "py-2 px-4 text-xs sm:text-sm font-bold rounded-t-xl text-slate-400 hover:text-slate-200";
+                contentRecords.classList.remove('hidden');
+                contentGsheet.classList.add('hidden');
+            }
+        }
+
+        function saveGoogleSheetUrl() {
+            const urlInput = document.getElementById('input-gsheet-url').value.trim();
+            const viewUrlInput = document.getElementById('input-gsheet-view-url').value.trim();
+            
+            gsheetUrl = urlInput;
+            gsheetViewUrl = viewUrlInput;
+
+            localStorage.setItem('wc_chinese_gsheet_url', gsheetUrl);
+            localStorage.setItem('wc_chinese_gsheet_view_url', gsheetViewUrl);
+
+            const openLinkBtn = document.getElementById('link-open-gsheet');
+            if (gsheetViewUrl) {
+                openLinkBtn.href = gsheetViewUrl;
+                openLinkBtn.classList.remove('opacity-50', 'pointer-events-none');
+            }
+
+            playSound('correct');
+        }
+
+        function copyAppsScriptCode() {
+            const codeText = document.getElementById('code-apps-script').innerText;
+            const dummy = document.createElement('textarea');
+            document.body.appendChild(dummy);
+            dummy.value = codeText;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+
+            playSound('correct');
+        }
+
+        function renderAdminRecordsTable() {
+            const records = JSON.parse(localStorage.getItem('wc_chinese_records') || '[]');
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = '';
+
+            records.forEach(rec => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 text-xs text-slate-400">${rec.timestamp}</td>
+                    <td class="p-3 font-semibold text-white">${rec.playerName}</td>
+                    <td class="p-3 text-xs sm:text-sm">${rec.team}</td>
+                    <td class="p-3 text-center text-emerald-400">${rec.goalsScored}</td>
+                    <td class="p-3 text-center text-sky-400">${rec.sentencesCorrect}</td>
+                    <td class="p-3 text-right font-sports text-xl text-amber-300 font-bold">${rec.totalScore}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportScoresCSV() {
+            const records = JSON.parse(localStorage.getItem('wc_chinese_records') || '[]');
+            if (records.length === 0) return;
+
+            let csvContent = "data:text/csv;charset=utf-8,Timestamp,Player Name,Team,Total Score,Goals Scored,Sentences Correct,Accuracy %\n";
+            records.forEach(r => {
+                csvContent += `"${r.timestamp}","${r.playerName}","${r.team}",${r.totalScore},${r.goalsScored},${r.sentencesCorrect},${r.accuracy}%\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "chinese_penalty_scores.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function clearLocalRecords() {
+            localStorage.removeItem('wc_chinese_records');
+            renderAdminRecordsTable();
+            renderLeaderboardTable();
+        }
+
+        function initTeamSelectorUI() {
+            const container = document.getElementById('team-selector');
+            container.innerHTML = '';
+
+            NATIONAL_TEAMS.forEach((team, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `p-1 rounded-lg sm:rounded-xl border text-center transition-all flex flex-col items-center justify-center ${idx === 0 ? 'bg-amber-500/20 border-amber-400 glow-gold' : 'glass-card border-slate-700 hover:border-slate-500'}`;
+                btn.innerHTML = `
+                    <span class="text-base sm:text-2xl leading-none mb-0.5">${team.flag}</span>
+                    <span class="text-[8px] sm:text-[10px] font-bold text-slate-200 truncate w-full">${team.name}</span>
+                `;
+                btn.onclick = () => {
+                    selectedTeam = team;
+                    document.querySelectorAll('#team-selector button').forEach(b => {
+                        b.className = 'p-1 rounded-lg sm:rounded-xl border text-center transition-all flex flex-col items-center justify-center glass-card border-slate-700 hover:border-slate-500';
+                    });
+                    btn.className = 'p-1 rounded-lg sm:rounded-xl border text-center transition-all flex flex-col items-center justify-center bg-amber-500/20 border-amber-400 glow-gold';
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function startGame() {
+            const nameInput = document.getElementById('input-player-name').value.trim();
+            if (!nameInput) {
+                document.getElementById('input-player-name').focus();
+                document.getElementById('input-player-name').classList.add('border-rose-500');
+                return;
+            }
+
+            playerName = nameInput;
+            currentRoundIndex = 0;
+            totalScore = 0;
+            goalsCount = 0;
+            correctSentencesCount = 0;
+
+            document.getElementById('hud-flag').textContent = selectedTeam.flag;
+            document.getElementById('hud-player-name').textContent = playerName;
+            document.getElementById('hud-team-name').textContent = selectedTeam.name;
+            document.getElementById('hud-round').textContent = `1 / ${QUESTION_DATABASE.length}`;
+            document.getElementById('hud-score').textContent = '0';
+
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+
+            init3DScene();
+            setupSwipeControls();
+            resetBallAndKeeper();
+            playSound('correct');
+        }
+
+        function restartGame() {
+            document.getElementById('screen-leaderboard').classList.add('hidden');
+            document.getElementById('screen-welcome').classList.remove('hidden');
+        }
+
+        window.onload = function() {
+            initTeamSelectorUI();
+            
+            const DEFAULT_GSHEET_URL = "https://script.google.com/macros/s/AKfycbxy3uJkH4-suMUbKHZorZW6xGdlgQ_45nvv9ulzj8U6lZ2B2xVJeEToZU8es2Max2Dw/exec";
+            gsheetUrl = localStorage.getItem('wc_chinese_gsheet_url') || DEFAULT_GSHEET_URL;
+            gsheetViewUrl = localStorage.getItem('wc_chinese_gsheet_view_url') || "";
+
+            if (gsheetUrl) document.getElementById('input-gsheet-url').value = gsheetUrl;
+            if (gsheetViewUrl) {
+                document.getElementById('input-gsheet-view-url').value = gsheetViewUrl;
+                const openLinkBtn = document.getElementById('link-open-gsheet');
+                openLinkBtn.href = gsheetViewUrl;
+                openLinkBtn.classList.remove('opacity-50', 'pointer-events-none');
+            }
+
+            // Auto resize 3D canvas and controls when phone orientation changes
+            window.addEventListener('orientationchange', function() {
+                setTimeout(onWindowResize, 200);
+            });
+            window.addEventListener('resize', function() {
+                onWindowResize();
+            });
+        };
+    </script>
+</body>
+</html>
